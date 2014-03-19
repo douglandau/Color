@@ -1,0 +1,34 @@
+Color
+=====
+
+Color is a colormap watcher and editor for 8 bit PseudoColor visuals,
+with a Motif GUI
+
+Color displays a 16x16 matrix of swatches like xcmap, each representing
+one of the 256 cells, and adds :
+- the ability to select one of the swatches
+- two new panes:
+  - first new pane has three sliders adjusting the red green 
+    and blue components of the selected colorcell 
+  - second new pane has a larger swatch of the color for easier viewing.  
+- a "Black out free cells" button
+- a log of all events to happen to the cmap
+- a status line showing:
+  - the number of free cells
+  - the status of the elected cell
+
+Color was developed to help debug a application attempting to 
+display an image on a Sun Sparc with a 256 PseudoColor visual.
+
+Color polls the cmap for its contents every N seconds and updates
+the display.  The way to use it therefore is:
+
+1.  Run it
+2.  Click "Black out free cells"
+3.  Load up the cmap with xli or xwud or your app 
+
+You will see exactly which cells are being gobbled up.
+
+Color's behavior when run against other visuals (DirectColor, TrueColor, etc) 
+is undefined.
+

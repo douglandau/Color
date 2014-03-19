@@ -1,0 +1,147 @@
+From ix.netcom.com!su-news-hub1.bbnplanet.com!su-news-feed2.bbnplanet.com!news.bbnplanet.com!news.Stanford.EDU!newsfeed.berkeley.edu!newsfeed.yosemite.net!nntp.lsan03.pbi.net!news.pbi.net!not-for-mail Tue Jul 28 17:21:54 1998
+Path: ix.netcom.com!su-news-hub1.bbnplanet.com!su-news-feed2.bbnplanet.com!news.bbnplanet.com!news.Stanford.EDU!newsfeed.berkeley.edu!newsfeed.yosemite.net!nntp.lsan03.pbi.net!news.pbi.net!not-for-mail
+From: Rob Ryan <rr2b@pacbell.net>
+Newsgroups: comp.windows.x
+Subject: Re: Colormap cell status
+Date: Fri, 24 Jul 1998 13:58:54 +0000
+Organization: Pacific Bell Internet Services
+Lines: 129
+Message-ID: <35B8931E.F4EEEDB0@pacbell.net>
+References: <6p7ujh$1m6$1@news.teaser.fr> <6p7v11$1q7$1@news.teaser.fr>
+NNTP-Posting-Host: ppp-206-170-24-23.sntc01.pacbell.net
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="------------0EE84E9F333B07B6BDBF0877"
+X-Mailer: Mozilla 4.04 [en] (X11; I; Linux 2.0.33 i686)
+To: Andre Majorel <amajo_el@tease_.f_>
+Xref: ix.netcom.com comp.windows.x:116958
+
+This is a multi-part message in MIME format.
+--------------0EE84E9F333B07B6BDBF0877
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+There is no simple answer to finding the status of a particular color
+cell or set of cells.
+
+I've attached a program I use to find out the number of colors free/used
+on a 256 color display, it spits out a list of the available color
+cells.  The way it works is to use a binary search to alloate read-write
+colors until it can't allocate any more.
+
+-Rob
+--------------0EE84E9F333B07B6BDBF0877
+Content-Type: text/plain; charset=us-ascii; name="u.c"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline; filename="u.c"
+
+#include <stdio.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <stddef.h>
+
+static int vals[]={
+    0x0000,
+    0x3333,
+    0x6666,
+    0x9999,
+    0xcccc,
+    0xffff
+};
+static int xerr = 0;
+static int Handler(Display *dpy, XErrorEvent *ev)
+{
+    char errbuf[1024];
+    xerr++;
+  /*  XGetErrorText(dpy, ev->error_code, errbuf, sizeof(errbuf));
+    printf("error: %s\n", errbuf); */
+    return 0;
+}
+
+static int comp(unsigned long x, unsigned long y) {
+    if(x<y) return -1;
+    if(y>x) return 1;
+    else return 0;
+}
+
+int main(int argc, char **argv) {
+    Display *dpy=XOpenDisplay(NULL);
+    Colormap map=DefaultColormap(dpy, DefaultScreen(dpy));
+    unsigned long pixels[256];
+    unsigned long planes[1];
+    XColor pmap[256];
+    int min=0;
+    int max=256;
+    int r, g, b;
+    int i, span=0, maxspan=0;
+    int size=sizeof(vals)/sizeof(int);
+    XSetErrorHandler(Handler);
+    memset(pmap, 0, sizeof(pmap));
+    while(min!=max) {
+	int attempted=(min+max+1)/2;
+	int status=XAllocColorCells(dpy, map, True, planes, 0, pixels, attempted);
+	if(status) {
+	    min=attempted;
+	    XFreeColors(dpy, map, pixels, attempted, 0);
+	} else {
+	    if(max==attempted) break;
+	    max=attempted;
+	}
+    }
+    qsort(pixels, min, sizeof(pixels[0]), comp);
+    for(i=0;i<256;i++)
+    {
+	pmap[i].pixel=i;
+    }
+    XQueryColors(dpy, map, pmap, 256);
+    for(i=0;i<min;i++) {
+	pmap[pixels[i]].pixel=999;
+	printf("%0.3d ", pixels[i]);
+	if(i>0 && pixels[i]!=pixels[i-1]+1) {
+	    printf("|\n");
+	    span=1;
+	} else span++;
+	if(span>maxspan) maxspan=span;
+    }
+    
+    printf("\navailable colors:%d, maximum span:%d\n", min, maxspan);
+    fflush(stdout);
+    for(i=0;i<256;i++)
+    {
+	if(pmap[i].pixel>255)
+	    continue;
+	XStoreColor(dpy, map, pmap+i);
+	xerr=0;
+	XSync(dpy, False);
+	if (!xerr)
+	{
+	    printf("pixel %d read-write\n", i);
+	}
+
+    }
+    XFlush(dpy);
+#if 0 
+    for(r=0;r<size;r++)
+	for(g=0;g<size;g++)
+	    for(b=0;b<size;b++) {
+		int status;
+		XColor color;
+		color.red=vals[r];
+		color.green=vals[g];
+		color.blue=vals[b];
+		status=XAllocColor(dpy, map, &color);
+		if(!status) {
+		    fprintf(stderr, "Allocation failed after %d colors...\n", r*size*size+g*size+b);
+		    exit(-1);
+		}
+		printf("%d %d %d\n", vals[r]/256, vals[g]/256, vals[b]/256);
+	    }
+    printf("\nallocated all %d colors\n", size*size*size);
+    fflush(stdout);
+#endif
+    XCloseDisplay(dpy);
+    return 0;
+}
+
+--------------0EE84E9F333B07B6BDBF0877--
+
+

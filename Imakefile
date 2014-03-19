@@ -1,0 +1,13 @@
+
+XMLIB = -lXm 
+
+SYS_LIBRARIES = -lm  $(XMLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+
+DEPLIBS = $(DEPXMLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
+
+SRCS =  color.c rgb.c log.c cmap.c error.c
+OBJS =  color.o rgb.o log.o cmap.o error.o
+
+ComplexProgramTarget(color)
+
+
